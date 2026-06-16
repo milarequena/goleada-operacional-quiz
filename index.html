@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Goleada Operacional — Dominando OPS 2.0</title>
+  <style>
+    /* ── Variáveis & Reset ─────────────────────────────────────────── */
+    :root {
+      --verde: #009739;
+      --verde-escuro: #006b2a;
+      --amarelo: #fedd00;
+      --amarelo-escuro: #d4b800;
+      --azul: #002776;
+      --azul-claro: #1a4a9e;
+      --branco: #ffffff;
+      --vermelho: #e63946;
+      --verde-acerto: #2ecc71;
+      --cinza: #f0f4f8;
+      --sombra: 0 8px 32px rgba(0, 39, 118, 0.25);
+      --timer-segundos: 30;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--azul);
+      color: var(--branco);
+    }
+
+    /* ── Fundo decorativo ──────────────────────────────────────────── */
+    .bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: linear-gradient(160deg, var(--azul) 0%, #001a4d 40%, var(--verde-escuro) 100%);
+      overflow: hidden;
+    }
+
+    .bg::before {
+      content: "";
+      position: absolute;
+      top: -20%;
+      right: -10%;
+      width: 60vmin;
+      height: 60vmin;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(254, 221, 0, 0.15) 0%, transparent 70%);
+      animation: pulse-glow 4s ease-in-out infinite;
+    }
+
+    .bg::after {
+      content: "";
+      position: absolute;
+      bottom: -15%;
+      left: -10%;
+      width: 50vmin;
+      height: 50vmin;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 151, 57, 0.2) 0%, transparent 70%);
+      animation: pulse-glow 5s ease-in-out infinite reverse;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.08); opacity: 1; }
+    }
+
+    /* Estrelas decorativas */
+    .stars {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .star {
+      position: absolute;
+      color: var(--amarelo);
+      opacity: 0.35;
+      animation: twinkle 3s ease-in-out infinite;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.2; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.15); }
+    }
+
+    /* Bola de futebol flutuante */
+    .floating-ball {
+      position: fixed;
+      bottom: 5%;
+      right: 4%;
+      width: clamp(60px, 10vmin, 100px);
+      height: clamp(60px, 10vmin, 100px);
+      z-index: 0;
+      opacity: 0.25;
+      animation: float-ball 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes float-ball {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(180deg); }
+    }
+
+    /* Faixa estilizada da bandeira */
+    .flag-stripe {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      z-index: 100;
+      background: linear-gradient(90deg,
+        var(--verde) 0%, var(--verde) 33%,
+        var(--amarelo) 33%, var(--amarelo) 66%,
+        var(--azul) 66%, var(--azul) 100%
+      );
+    }
+
+    /* ── Container principal ───────────────────────────────────────── */
+    .app {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: clamp(1rem, 3vw, 2.5rem);
+    }
+
+    /* ── Telas ─────────────────────────────────────────────────────── */
+    .screen {
+      display: none;
+      width: 100%;
+      max-width: 1100px;
+      text-align: center;
+      animation: fade-in 0.5s ease forwards;
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(1rem, 3vw, 2rem);
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Tela Inicial ──────────────────────────────────────────────── */
+    .welcome-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(254, 221, 0, 0.15);
+      border: 2px solid var(--amarelo);
+      border-radius: 50px;
+      padding: 0.5rem 1.5rem;
+      font-size: clamp(0.85rem, 2vw, 1.1rem);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--amarelo);
+    }
+
+    .welcome-title {
+      font-size: clamp(2.5rem, 8vw, 5.5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      background: linear-gradient(135deg, var(--amarelo) 0%, #fff 50%, var(--amarelo) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .welcome-subtitle {
+      font-size: clamp(1.1rem, 3vw, 1.8rem);
+      color: rgba(255, 255, 255, 0.85);
+      max-width: 600px;
+      line-height: 1.5;
+    }
+
+    .welcome-icon {
+      font-size: clamp(4rem, 12vw, 7rem);
+      line-height: 1;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+      animation: bounce-icon 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce-icon {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    /* ── Botões ────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      text-transform: uppercase;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    }
+
+    .btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--amarelo) 0%, var(--amarelo-escuro) 100%);
+      color: var(--azul);
+      font-size: clamp(1.2rem, 3.5vw, 1.8rem);
+      padding: clamp(0.9rem, 2.5vw, 1.3rem) clamp(2rem, 6vw, 4rem);
+      box-shadow: 0 6px 24px rgba(254, 221, 0, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--branco);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      padding: clamp(0.7rem, 2vw, 1rem) clamp(1.5rem, 4vw, 2.5rem);
+    }
+
+    /* ── Tela de Pergunta ──────────────────────────────────────────── */
+    .question-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .question-counter {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      font-weight: 600;
+      color: var(--amarelo);
+      background: rgba(0, 0, 0, 0.25);
+      padding: 0.5rem 1.2rem;
+      border-radius: 50px;
+      white-space: nowrap;
+    }
+
+    /* Timer circular */
+    .timer-wrapper {
+      position: relative;
+      width: clamp(70px, 12vmin, 110px);
+      height: clamp(70px, 12vmin, 110px);
+      flex-shrink: 0;
+    }
+
+    .timer-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .timer-track {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.15);
+      stroke-width: 6;
+    }
+
+    .timer-progress {
+      fill: none;
+      stroke: var(--amarelo);
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-dasharray: 283;
+      stroke-dashoffset: 0;
+      transition: stroke 0.3s ease;
+    }
+
+    .timer-progress.urgent {
+      stroke: var(--vermelho);
+      animation: timer-pulse 0.5s ease-in-out infinite;
+    }
+
+    @keyframes timer-pulse {
+      0%, 100% { filter: drop-shadow(0 0 4px var(--vermelho)); }
+      50% { filter: drop-shadow(0 0 12px var(--vermelho)); }
+    }
+
+    .timer-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      font-weight: 900;
+      color: var(--branco);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .timer-text.urgent {
+      color: var(--vermelho);
+      animation: timer-pulse 0.5s ease-in-out infinite;
+    }
+
+    .question-card {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 24px;
+      padding: clamp(1.5rem, 4vw, 3rem);
+      box-shadow: var(--sombra);
+      animation: slide-up 0.4s ease forwards;
+    }
+
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .question-text {
+      font-size: clamp(1.4rem, 4.5vw, 2.8rem);
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--branco);
+      margin-bottom: clamp(1.2rem, 3vw, 2rem);
+    }
+
+    /* Alternativas */
+    .alternatives {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(0.8rem, 2vw, 1.2rem);
+      width: 100%;
+    }
+
+    @media (max-width: 600px) {
+      .alternatives {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .alternative {
+      display: flex;
+      align-items: center;
+      gap: clamp(0.8rem, 2vw, 1.2rem);
+      background: rgba(255, 255, 255, 0.1);
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: clamp(1rem, 2.5vw, 1.5rem) clamp(1.2rem, 3vw, 2rem);
+      cursor: pointer;
+      text-align: left;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      font-family: inherit;
+      color: var(--branco);
+      animation: alt-enter 0.4s ease backwards;
+    }
+
+    .alternative:nth-child(1) { animation-delay: 0.05s; }
+    .alternative:nth-child(2) { animation-delay: 0.1s; }
+    .alternative:nth-child(3) { animation-delay: 0.15s; }
+    .alternative:nth-child(4) { animation-delay: 0.2s; }
+
+    @keyframes alt-enter {
+      from { opacity: 0; transform: translateX(-20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .alternative:hover:not(.disabled) {
+      transform: scale(1.03);
+      border-color: var(--amarelo);
+      background: rgba(254, 221, 0, 0.12);
+      box-shadow: 0 6px 20px rgba(254, 221, 0, 0.2);
+    }
+
+    .alternative.disabled {
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .alternative.correct {
+      border-color: var(--verde-acerto);
+      background: rgba(46, 204, 113, 0.25);
+      box-shadow: 0 0 24px rgba(46, 204, 113, 0.4);
+      animation: correct-pop 0.4s ease;
+    }
+
+    .alternative.wrong {
+      border-color: var(--vermelho);
+      background: rgba(230, 57, 70, 0.25);
+      box-shadow: 0 0 24px rgba(230, 57, 70, 0.4);
+      animation: wrong-shake 0.4s ease;
+    }
+
+    .alternative.reveal-correct {
+      border-color: var(--verde-acerto);
+      background: rgba(46, 204, 113, 0.15);
+    }
+
+    @keyframes correct-pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes wrong-shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+
+    .alt-letter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: clamp(40px, 6vw, 56px);
+      height: clamp(40px, 6vw, 56px);
+      background: var(--amarelo);
+      color: var(--azul);
+      border-radius: 12px;
+      font-size: clamp(1.1rem, 3vw, 1.6rem);
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    .alternative.correct .alt-letter,
+    .alternative.reveal-correct .alt-letter {
+      background: var(--verde-acerto);
+      color: var(--branco);
+    }
+
+    .alternative.wrong .alt-letter {
+      background: var(--vermelho);
+      color: var(--branco);
+    }
+
+    .alt-text {
+      font-size: clamp(1rem, 3vw, 1.6rem);
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    /* Feedback overlay */
+    .feedback-msg {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 800;
+      padding: 0.8rem 2rem;
+      border-radius: 16px;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .feedback-msg.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .feedback-msg.acerto {
+      color: var(--verde-acerto);
+      text-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
+    }
+
+    .feedback-msg.erro {
+      color: var(--vermelho);
+      text-shadow: 0 0 20px rgba(230, 57, 70, 0.5);
+    }
+
+    .feedback-explicacao {
+      font-size: clamp(0.95rem, 2.5vw, 1.25rem);
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+      max-width: 800px;
+      line-height: 1.5;
+      padding: 0 1rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.4s ease 0.2s, transform 0.4s ease 0.2s;
+    }
+
+    .feedback-explicacao.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .grupo-badge {
+      display: inline-block;
+      background: rgba(0, 151, 57, 0.3);
+      border: 1px solid var(--verde);
+      color: var(--amarelo);
+      font-size: clamp(0.75rem, 1.8vw, 0.95rem);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.9rem;
+      border-radius: 50px;
+      margin-bottom: 0.5rem;
+    }
+
+    .welcome-title-sub {
+      font-size: clamp(1.2rem, 4vw, 2.2rem);
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.9);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .alternatives.two-cols {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @media (max-width: 600px) {
+      .alternatives.two-cols {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Tela Final ────────────────────────────────────────────────── */
+    .final-trophy {
+      font-size: clamp(4rem, 12vw, 7rem);
+      animation: trophy-bounce 1s ease infinite;
+    }
+
+    @keyframes trophy-bounce {
+      0%, 100% { transform: translateY(0) rotate(-5deg); }
+      50% { transform: translateY(-12px) rotate(5deg); }
+    }
+
+    .final-title {
+      font-size: clamp(2rem, 6vw, 4rem);
+      font-weight: 900;
+      color: var(--amarelo);
+    }
+
+    .score-display {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 0.3rem;
+      line-height: 1;
+    }
+
+    .score-number {
+      font-size: clamp(5rem, 18vw, 10rem);
+      font-weight: 900;
+      color: var(--amarelo);
+      text-shadow: 0 4px 24px rgba(254, 221, 0, 0.5);
+      animation: score-pop 0.6s ease;
+    }
+
+    @keyframes score-pop {
+      0% { transform: scale(0); opacity: 0; }
+      60% { transform: scale(1.15); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .score-total {
+      font-size: clamp(2rem, 6vw, 4rem);
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .final-message {
+      font-size: clamp(1.1rem, 3vw, 1.8rem);
+      color: rgba(255, 255, 255, 0.85);
+      max-width: 650px;
+      line-height: 1.5;
+    }
+
+    .score-bar-container {
+      width: 100%;
+      max-width: 500px;
+      height: 16px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 50px;
+      overflow: hidden;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--verde) 0%, var(--amarelo) 100%);
+      border-radius: 50px;
+      width: 0%;
+      transition: width 1s ease 0.3s;
+    }
+
+    .final-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="flag-stripe"></div>
+
+  <div class="bg"></div>
+
+  <!-- Estrelas decorativas (geradas via JS) -->
+  <div class="stars" id="stars"></div>
+
+  <!-- Bola de futebol SVG -->
+  <svg class="floating-ball" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="48" fill="#fff" stroke="#333" stroke-width="2"/>
+    <polygon points="50,10 62,38 90,38 68,56 76,84 50,68 24,84 32,56 10,38 38,38" fill="#333"/>
+    <polygon points="50,22 56,40 74,40 60,52 66,70 50,58 34,70 40,52 26,40 44,40" fill="#fff"/>
+  </svg>
+
+  <div class="app">
+
+    <!-- ══════════════════ TELA INICIAL ══════════════════ -->
+    <section class="screen active" id="screen-welcome">
+      <div class="welcome-badge">🇧🇷 Copa do Mundo 2026 · Pack Ops</div>
+      <div class="welcome-icon">⚽</div>
+      <h1 class="welcome-title">Goleada Operacional</h1>
+      <p class="welcome-title-sub">Dominando OPS</p>
+      <p class="welcome-subtitle">
+        Teste seus conhecimentos sobre processos operacionais, Pack Ops e a Copa 2026!<br>
+        Você tem <strong id="timer-display-welcome">30</strong> segundos por pergunta.
+      </p>
+      <div id="group-selector-container"></div>
+      <button class="btn btn-primary" id="btn-start">Começar 🚀</button>
+    </section>
+
+    <!-- ══════════════════ TELA DE PERGUNTA ══════════════════ -->
+    <section class="screen" id="screen-question">
+      <div class="question-header">
+        <span class="question-counter" id="question-counter">Pergunta 1 de 3</span>
+        <div class="timer-wrapper">
+          <svg class="timer-svg" viewBox="0 0 100 100">
+            <circle class="timer-track" cx="50" cy="50" r="45"/>
+            <circle class="timer-progress" id="timer-progress" cx="50" cy="50" r="45"/>
+          </svg>
+          <div class="timer-text" id="timer-text">30</div>
+        </div>
+      </div>
+
+      <div class="question-card">
+        <p class="question-text" id="question-text"></p>
+        <div class="alternatives" id="alternatives"></div>
+      </div>
+
+      <div class="feedback-msg" id="feedback-msg"></div>
+      <p class="feedback-explicacao" id="feedback-explicacao"></p>
+    </section>
+
+    <!-- ══════════════════ TELA FINAL ══════════════════ -->
+    <section class="screen" id="screen-final">
+      <div class="final-trophy">🏆</div>
+      <h2 class="final-title">Goleada Finalizada!</h2>
+      <div class="score-display">
+        <span class="score-number" id="score-number">0</span>
+        <span class="score-total" id="score-total">/ 0</span>
+      </div>
+      <div class="score-bar-container">
+        <div class="score-bar-fill" id="score-bar-fill"></div>
+      </div>
+      <p class="final-message" id="final-message"></p>
+      <div class="final-actions">
+        <button class="btn btn-primary" id="btn-restart">Jogar Novamente</button>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    /* ══════════════════════════════════════════════════════════════
+       CONFIGURAÇÃO — ajuste o tempo por pergunta aqui
+       ══════════════════════════════════════════════════════════════ */
+    const CONFIG = {
+      timerSegundos: 30,       // segundos por pergunta
+      tempoFeedback: 1800,     // ms para exibir feedback antes de avançar
+      tempoUrgente: 10,        // segundos restantes para ativar alerta visual
+    };
+
+    /* ══════════════════════════════════════════════════════════════
+       PERGUNTAS — edite o array abaixo com suas perguntas
+       Formato: { pergunta, alternativas: [...], correta: índice, explicacao?, grupo? }
+       correta: 0 = A, 1 = B, 2 = C, 3 = D
+       ══════════════════════════════════════════════════════════════ */
+
+    // <!-- INSIRA SUAS PERGUNTAS AQUI -->
+    const PERGUNTAS = [
+      /* ── GRUPO 1 ── */
+      {
+        grupo: "Grupo 1",
+        pergunta: "Quem acionar quando a fila do seu distrito fica vazia?",
+        alternativas: ["CXP", "Pack Ops", "Supervisão direta", "IT-Ops"],
+        correta: 1
+      },
+      {
+        grupo: "Grupo 1",
+        pergunta: "A planilha de dimensionamento (Planilhoss) reflete as atualizações da Base Dim instantaneamente.",
+        alternativas: ["Verdadeiro", "Falso"],
+        correta: 1,
+        explicacao: "Pode haver um delay entre a atualização da Base Dim e o que aparece no Planilhoss."
+      },
+      {
+        grupo: "Grupo 1",
+        pergunta: "Para mudança do horário de almoço, devo acionar diretamente a Pack Ops.",
+        alternativas: ["Verdadeiro", "Falso"],
+        correta: 1,
+        explicacao: "Deve ser acionada a liderança direta."
+      },
+      {
+        grupo: "Grupo 1",
+        pergunta: "Quem devo acionar sobre problemas com meu dash de performance?",
+        alternativas: ["Pack Ops", "Liderança do distrito", "Liderança direta", "Outros analistas"],
+        correta: 2
+      },
+      {
+        grupo: "Grupo 1",
+        pergunta: "Como é calculada a métrica de produtividade que aparece no dash dos analistas?",
+        alternativas: [
+          "% Jobs Done Equivalentes / % Ocupação",
+          "% Jobs Done / % Tempo Online",
+          "% SLA atingido / % Volume",
+          "% Ocupação / % Absenteísmo"
+        ],
+        correta: 0,
+        explicacao: "% Jobs Done Equivalentes dividido por % Ocupação."
+      },
+
+      /* ── GRUPO 2 ── */
+      {
+        grupo: "Grupo 2",
+        pergunta: "Quando estiver caindo só email para mim, devo acionar o Pack Ops?",
+        alternativas: ["Sim", "Não"],
+        correta: 1,
+        explicacao: "Por questão de estratégia operacional, você está direcionado para somente uma fila."
+      },
+      {
+        grupo: "Grupo 2",
+        pergunta: "Se uma reunião for cancelada, a solicitação de ajuste no dimensionamento deve ser feita para a liderança direta.",
+        alternativas: ["Verdadeiro", "Falso"],
+        correta: 0,
+        explicacao: "Nesse caso é a liderança direta que ajusta o dimensionamento."
+      },
+      {
+        grupo: "Grupo 2",
+        pergunta: "Qual é o nome da ferramenta utilizada para monitorar as filas dos distritos?",
+        alternativas: ["Shuffle", "Grafana", "Planilhos", "Jira"],
+        correta: 1,
+        explicacao: "O Grafana é onde acompanhamos SLA, OTD e Volume das filas em tempo real."
+      },
+      {
+        grupo: "Grupo 2",
+        pergunta: "O Pack Ops é responsável por ajustes de queda de internet no dimensionamento dos analistas.",
+        alternativas: ["Verdadeiro", "Falso"],
+        correta: 1,
+        explicacao: "A supervisão direta deve solicitar o ajuste."
+      },
+      {
+        grupo: "Grupo 2",
+        pergunta: "Como é calculado o Job Equivalente?",
+        alternativas: [
+          "Time spent esperado do job ÷ time spent padrão de 6 min",
+          "Time spent real ÷ time spent padrão de 10 min",
+          "Volume de jobs ÷ horas trabalhadas",
+          "SLA atingido ÷ total de jobs"
+        ],
+        correta: 0,
+        explicacao: "É o time spent esperado para o job dividido pelo time spent padrão de 6 minutos."
+      },
+
+      /* ── GRUPO 3 ── */
+      {
+        grupo: "Grupo 3",
+        pergunta: "Quem não devo acionar durante os finais de semana?",
+        alternativas: ["Liderança on call", "Focal Points", "Pack Ops", "Nenhuma das alternativas"],
+        correta: 2,
+        explicacao: "Aos finais de semana, temos a liderança On call e Pontos focais."
+      },
+      {
+        grupo: "Grupo 3",
+        pergunta: "Só eu estou com problema de escopo ou acesso a ferramenta. Ops vai remover as badges das filas em questão.",
+        alternativas: ["Verdadeiro", "Falso"],
+        correta: 1,
+        explicacao: "Acione IT-Ops via Jira ou o Especialista do distrito. Avise também a liderança direta para acompanhamento e ajuste do dimensionamento."
+      },
+      {
+        grupo: "Grupo 3",
+        pergunta: "Pack Ops é responsável por:",
+        alternativas: [
+          "Ajuste de badges",
+          "Acompanhamento de filas",
+          "Ajuste de slots para task force",
+          "Todas as alternativas"
+        ],
+        correta: 3
+      },
+      {
+        grupo: "Grupo 3",
+        pergunta: "Recebi uma notificação sobre treinamento obrigatório pendente. Quem devo procurar primeiro?",
+        alternativas: ["Pack Ops", "L&D", "Liderança direta", "Onboarding"],
+        correta: 2
+      },
+
+      /* ── PERGUNTAS GERAIS ── */
+      {
+        pergunta: "Qual/quais critérios preciso me atentar ao programar minhas férias?",
+        alternativas: [
+          "Alinhar com minha liderança",
+          "Pelo menos 30 dias de antecedência",
+          "Absenteísmo do distrito",
+          "Todas as anteriores"
+        ],
+        correta: 3
+      },
+      {
+        pergunta: "Pack Ops atua aos finais de semana.",
+        alternativas: ["Verdadeiro", "Falso"],
+        correta: 1,
+        explicacao: "Aos finais de semana, temos a liderança On call e Pontos focais."
+      },
+      {
+        pergunta: "Pack Ops é responsável pela resolução de problemas no Shuffle.",
+        alternativas: ["Verdadeiro", "Falso"],
+        correta: 1,
+        explicacao: "CXP é o time que cuida do Shuffle. Abra um ticket no portal Ask CX → Shuffle Brasil."
+      },
+      {
+        pergunta: "Qual tipo de job não pode ser feito após 17h e finais de semana e feriados?",
+        alternativas: ["PIX", "DCI", "Authorization", "E-mails de TFO"],
+        correta: 2
+      },
+      {
+        pergunta: "Percebi que meu Dim está com 2 horas de BREAK. Como a Pack Ops é operacional, devo acionar de imediato o time.",
+        alternativas: ["Verdadeiro", "Falso"],
+        correta: 1,
+        explicacao: "Acione a liderança direta."
+      },
+      {
+        pergunta: "Após acionar o Pack Ops, as badges foram atualizadas e o Dim foi atualizado, mas após 1 min não consta no Planilhoss. Devo acionar novamente?",
+        alternativas: ["Verdadeiro", "Falso"],
+        correta: 1,
+        explicacao: "Pode haver um delay entre a atualização da Base Dim e o que aparece no Planilhoss."
+      },
+      {
+        pergunta: "O Pack Ops sempre vai priorizar filas com maior volume.",
+        alternativas: ["Verdadeiro", "Falso"],
+        correta: 1,
+        explicacao: "Existem outros critérios: prazos de reguladores, atrito com clientes, precedentes para complains, etc."
+      },
+      {
+        pergunta: "Minha VPN não conecta. Quem eu devo acionar?",
+        alternativas: ["Supervisão", "IT-Ops", "Pack Ops", "Pack Support"],
+        correta: 1,
+        explicacao: "Abrir um ticket no Jira IT-eng."
+      },
+      {
+        pergunta: "Quem acionar quando algum job (processo) ou ferramenta não funcionar corretamente?",
+        alternativas: ["Especialista do distrito", "Pack Ops", "Supervisão direta", "IT-Ops"],
+        correta: 0
+      },
+      {
+        pergunta: "Em caso de alteração de badges aos finais de semana, quem deve ser acionado?",
+        alternativas: ["Pack Ops", "Support", "Pontos focais", "Liderança on call"],
+        correta: 2,
+        explicacao: "Aos finais de semana, a alteração de badges é realizada pelos focais, acionados via workflow."
+      },
+      {
+        pergunta: "A calculadora de jobs está com problemas. Devo acionar o Pack Ops.",
+        alternativas: ["Verdadeiro", "Falso"],
+        correta: 0,
+        explicacao: "O Pack Ops atualmente se responsabiliza pela manutenção e melhoria da ferramenta."
+      },
+      {
+        pergunta: "Quero mudar meu horário de almoço. Pra quem devo pedir?",
+        alternativas: ["People", "Liderança direta", "Ops", "L&D"],
+        correta: 1
+      },
+      {
+        pergunta: "Quando a fila do meu distrito estiver vazia, devo me direcionar automaticamente para as Planilhas disponíveis.",
+        alternativas: ["Verdadeiro", "Falso"],
+        correta: 1,
+        explicacao: "Aguarde e siga a orientação do Pack Ops — podem haver demandas prioritárias ou task forces."
+      },
+      {
+        pergunta: "Quando a badge está divergente com o dimensionamento, quem devemos acionar?",
+        alternativas: ["People", "Pack Ops", "IT-Ops", "Supervisão"],
+        correta: 1
+      },
+      {
+        pergunta: "Acessei meu Dim e meu horário de entrada está divergente. Devo acionar minha liderança.",
+        alternativas: ["Verdadeiro", "Falso"],
+        correta: 0
+      },
+
+      /* ── COPA 2026 (descontração) ── */
+      {
+        grupo: "Copa 2026",
+        pergunta: "Onde está sendo realizada a Copa do Mundo de 2026?",
+        alternativas: [
+          "Apenas México",
+          "Estados Unidos, Canadá e México",
+          "Apenas Estados Unidos",
+          "Brasil e Argentina"
+        ],
+        correta: 1,
+        explicacao: "Em três países: Estados Unidos, Canadá e México."
+      },
+      {
+        grupo: "Copa 2026",
+        pergunta: "A seleção da Itália está no Grupo H da Copa do Mundo de 2026.",
+        alternativas: ["Verdadeiro", "Falso"],
+        correta: 1,
+        explicacao: "A Itália não se classificou para a Copa do Mundo de 2026."
+      },
+      {
+        grupo: "Copa 2026",
+        pergunta: "Qual é o apelido mais famoso da camisa oficial da Seleção Brasileira?",
+        alternativas: ["Verde-Amarela", "Amarelinha de Elite", "Camisa Canarinho", "Manto Sagrado"],
+        correta: 2,
+        explicacao: "O apelido surgiu pela cor amarela vibrante, que lembra um canário."
+      },
+      {
+        grupo: "Copa 2026",
+        pergunta: "Antes de adotar o tradicional uniforme amarelo e azul, qual era a cor principal da camisa do Brasil?",
+        alternativas: ["Preta e branca", "Azul", "Verde", "Branca"],
+        correta: 3,
+        explicacao: "O Brasil jogava de branco até a Copa de 1950. Após a derrota no Maracanã, a cor foi aposentada."
+      }
+    ];
+    // <!-- FIM DAS PERGUNTAS -->
+
+    /* ══════════════════════════════════════════════════════════════
+       ESTADO DO QUIZ
+       ══════════════════════════════════════════════════════════════ */
+    const LETRAS = ["A", "B", "C", "D"];
+    const CIRCUMFERENCIA = 2 * Math.PI * 45; // raio do SVG = 45
+    const BATE_BOLA_MARKER = { _bateBola: true };
+    const GRUPOS_OPCOES = [
+      { id: "1", label: "Grupo 1" },
+      { id: "2", label: "Grupo 2" },
+      { id: "3", label: "Grupo 3" },
+      { id: "4", label: "Grupo 4" },
+      { id: "5", label: "Grupo 5" },
+      { id: "6", label: "Grupo 6" },
+    ];
+
+    let perguntasAtivas = [];
+    let grupoSelecionado = "1";
+    let indiceAtual = 0;
+    let acertos = 0;
+    let timerInterval = null;
+    let bateBolaTimer = null;
+    let tempoRestante = CONFIG.timerSegundos;
+    let respondido = false;
+
+    function resolverGrupoId(pergunta, indice) {
+      if (pergunta.grupo === "Copa 2026") return "copa";
+      if (pergunta.grupo) return pergunta.grupo.replace("Grupo ", "");
+      if (indice >= 14 && indice <= 16) return "4";
+      if (indice >= 17 && indice <= 20) return "5";
+      if (indice >= 21 && indice <= 28) return "6";
+      return null;
+    }
+
+    function perguntasPorGrupo(grupoId) {
+      return PERGUNTAS
+        .map((pergunta, indice) => ({ pergunta, indice }))
+        .filter(({ pergunta, indice }) => resolverGrupoId(pergunta, indice) === grupoId)
+        .map(({ pergunta }) => pergunta);
+    }
+
+    function perguntasCopa() {
+      return PERGUNTAS.filter((pergunta, indice) => resolverGrupoId(pergunta, indice) === "copa");
+    }
+
+    function montarSequencia(grupoId) {
+      if (grupoId === "copa") {
+        return [...perguntasCopa()];
+      }
+      return [...perguntasPorGrupo(grupoId), BATE_BOLA_MARKER, ...perguntasCopa()];
+    }
+
+    function perguntasJogaveis() {
+      return perguntasAtivas.filter(q => !q._bateBola);
+    }
+
+    /* ── Elementos DOM ─────────────────────────────────────────── */
+    const screens = {
+      welcome:  document.getElementById("screen-welcome"),
+      question: document.getElementById("screen-question"),
+      final:    document.getElementById("screen-final"),
+    };
+
+    const el = {
+      btnStart:         document.getElementById("btn-start"),
+      btnRestart:       document.getElementById("btn-restart"),
+      questionCounter:  document.getElementById("question-counter"),
+      questionText:     document.getElementById("question-text"),
+      alternatives:     document.getElementById("alternatives"),
+      timerProgress:    document.getElementById("timer-progress"),
+      timerText:        document.getElementById("timer-text"),
+      feedbackMsg:      document.getElementById("feedback-msg"),
+      feedbackExplicacao: document.getElementById("feedback-explicacao"),
+      scoreNumber:      document.getElementById("score-number"),
+      scoreTotal:       document.getElementById("score-total"),
+      scoreBarFill:     document.getElementById("score-bar-fill"),
+      finalMessage:     document.getElementById("final-message"),
+      timerDisplayWelcome: document.getElementById("timer-display-welcome"),
+    };
+
+    /* ── Inicialização ─────────────────────────────────────────── */
+    function init() {
+      document.documentElement.style.setProperty("--timer-segundos", CONFIG.timerSegundos);
+      el.timerDisplayWelcome.textContent = CONFIG.timerSegundos;
+      el.timerProgress.style.strokeDasharray = CIRCUMFERENCIA;
+      gerarEstrelas();
+      criarSeletorGrupos();
+      el.btnStart.addEventListener("click", iniciarQuiz);
+      el.btnRestart.addEventListener("click", reiniciarQuiz);
+    }
+
+    function criarSeletorGrupos() {
+      const container = document.getElementById("group-selector-container");
+      const label = document.createElement("p");
+      label.className = "welcome-subtitle";
+      label.textContent = "Selecione o grupo para começar:";
+      container.appendChild(label);
+
+      const selector = document.createElement("div");
+      selector.id = "group-selector";
+
+      GRUPOS_OPCOES.forEach((grupo, i) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = i === 0 ? "btn btn-primary" : "btn btn-secondary";
+        btn.dataset.grupo = grupo.id;
+        btn.textContent = grupo.label;
+        btn.addEventListener("click", () => selecionarGrupo(grupo.id));
+        selector.appendChild(btn);
+      });
+
+      container.appendChild(selector);
+    }
+
+    function selecionarGrupo(grupoId) {
+      grupoSelecionado = grupoId;
+      document.querySelectorAll("#group-selector .btn").forEach(btn => {
+        const selecionado = btn.dataset.grupo === grupoId;
+        btn.className = selecionado ? "btn btn-primary" : "btn btn-secondary";
+      });
+    }
+
+    /* ── Estrelas decorativas ──────────────────────────────────── */
+    function gerarEstrelas() {
+      const container = document.getElementById("stars");
+      const posicoes = [
+        [8, 12], [22, 8], [45, 5], [70, 10], [88, 18],
+        [15, 35], [80, 30], [5, 55], [92, 50], [30, 70],
+        [60, 75], [12, 85], [75, 88], [50, 90], [40, 25]
+      ];
+      posicoes.forEach(([top, left], i) => {
+        const star = document.createElement("div");
+        star.className = "star";
+        star.textContent = "★";
+        star.style.top = top + "%";
+        star.style.left = left + "%";
+        star.style.fontSize = (0.8 + Math.random() * 1.2) + "rem";
+        star.style.animationDelay = (i * 0.3) + "s";
+        container.appendChild(star);
+      });
+    }
+
+    /* ── Navegação entre telas ─────────────────────────────────── */
+    function mostrarTela(nome) {
+      Object.values(screens).forEach(s => s.classList.remove("active"));
+      screens[nome].classList.add("active");
+    }
+
+    /* ── Iniciar / Reiniciar ───────────────────────────────────── */
+    function iniciarQuiz() {
+      if (bateBolaTimer) {
+        clearTimeout(bateBolaTimer);
+        bateBolaTimer = null;
+      }
+      perguntasAtivas = montarSequencia(grupoSelecionado);
+      indiceAtual = 0;
+      acertos = 0;
+      mostrarTela("question");
+      exibirPergunta();
+    }
+
+    function reiniciarQuiz() {
+      pararTimer();
+      if (bateBolaTimer) {
+        clearTimeout(bateBolaTimer);
+        bateBolaTimer = null;
+      }
+      mostrarTela("welcome");
+    }
+
+    function exibirBateBola() {
+      respondido = true;
+      pararTimer();
+
+      el.questionCounter.textContent =
+        `Pergunta ${indiceAtual + 1} de ${perguntasAtivas.length}`;
+      el.questionText.innerHTML =
+        `<span class="grupo-badge">⚽ Bate-Bola</span><br>⚽ Bate-Bola!`;
+      el.feedbackMsg.className = "feedback-msg";
+      el.feedbackMsg.textContent = "";
+      el.feedbackExplicacao.className = "feedback-explicacao";
+      el.feedbackExplicacao.textContent = "";
+      el.alternatives.innerHTML = "";
+      el.alternatives.className = "alternatives";
+      el.timerText.textContent = "⚽";
+      el.timerProgress.style.strokeDashoffset = 0;
+      el.timerProgress.classList.remove("urgent");
+      el.timerText.classList.remove("urgent");
+
+      bateBolaTimer = setTimeout(avancar, 2500);
+    }
+
+    /* ── Exibir pergunta ─────────────────────────────────────────── */
+    function exibirPergunta() {
+      const pergunta = perguntasAtivas[indiceAtual];
+
+      if (pergunta._bateBola) {
+        exibirBateBola();
+        return;
+      }
+
+      respondido = false;
+      const numAlts = pergunta.alternativas.length;
+      const grupoLabel = pergunta.grupo === "Copa 2026"
+        ? "⚽ Bate-Bola"
+        : (pergunta.grupo || `Grupo ${grupoSelecionado}`);
+
+      el.questionCounter.textContent =
+        `Pergunta ${indiceAtual + 1} de ${perguntasAtivas.length}`;
+      el.questionText.innerHTML =
+        `<span class="grupo-badge">${grupoLabel}</span><br>${pergunta.pergunta}`;
+      el.feedbackMsg.className = "feedback-msg";
+      el.feedbackMsg.textContent = "";
+      el.feedbackExplicacao.className = "feedback-explicacao";
+      el.feedbackExplicacao.textContent = "";
+
+      el.alternatives.innerHTML = "";
+      el.alternatives.className = numAlts === 2 ? "alternatives two-cols" : "alternatives";
+
+      pergunta.alternativas.forEach((texto, i) => {
+        const btn = document.createElement("button");
+        btn.className = "alternative";
+        btn.innerHTML = `
+          <span class="alt-letter">${LETRAS[i]}</span>
+          <span class="alt-text">${texto}</span>
+        `;
+        btn.addEventListener("click", () => responder(i));
+        el.alternatives.appendChild(btn);
+      });
+
+      iniciarTimer();
+    }
+
+    /* ── Timer ───────────────────────────────────────────────────── */
+    function iniciarTimer() {
+      pararTimer();
+      tempoRestante = CONFIG.timerSegundos;
+      atualizarTimerVisual();
+
+      timerInterval = setInterval(() => {
+        tempoRestante--;
+        atualizarTimerVisual();
+
+        if (tempoRestante <= 0) {
+          pararTimer();
+          if (!respondido) {
+            responder(-1); // tempo esgotado = erro
+          }
+        }
+      }, 1000);
+    }
+
+    function pararTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function atualizarTimerVisual() {
+      const progresso = tempoRestante / CONFIG.timerSegundos;
+      const offset = CIRCUMFERENCIA * (1 - progresso);
+
+      el.timerProgress.style.strokeDashoffset = offset;
+      el.timerText.textContent = tempoRestante;
+
+      const urgente = tempoRestante <= CONFIG.tempoUrgente;
+      el.timerProgress.classList.toggle("urgent", urgente);
+      el.timerText.classList.toggle("urgent", urgente);
+    }
+
+    /* ── Responder ───────────────────────────────────────────────── */
+    function responder(indiceEscolhido) {
+      if (respondido) return;
+      respondido = true;
+      pararTimer();
+
+      const pergunta = perguntasAtivas[indiceAtual];
+      const correta = pergunta.correta;
+      const acertou = indiceEscolhido === correta;
+
+      if (acertou) acertos++;
+
+      const botoes = el.alternatives.querySelectorAll(".alternative");
+      botoes.forEach((btn, i) => {
+        btn.classList.add("disabled");
+        if (i === correta) {
+          btn.classList.add("correct");
+        } else if (i === indiceEscolhido && !acertou) {
+          btn.classList.add("wrong");
+        } else if (!acertou && i === correta) {
+          btn.classList.add("reveal-correct");
+        }
+      });
+
+      if (indiceEscolhido === -1) {
+        el.feedbackMsg.textContent = "⏰ Tempo esgotado!";
+        el.feedbackMsg.className = "feedback-msg erro show";
+      } else if (acertou) {
+        el.feedbackMsg.textContent = "✅ GOL! Acertou!";
+        el.feedbackMsg.className = "feedback-msg acerto show";
+      } else {
+        el.feedbackMsg.textContent = "❌ Errou!";
+        el.feedbackMsg.className = "feedback-msg erro show";
+      }
+
+      if (pergunta.explicacao) {
+        el.feedbackExplicacao.textContent = pergunta.explicacao;
+        el.feedbackExplicacao.classList.add("show");
+      }
+
+      const tempoEspera = pergunta.explicacao ? 2800 : CONFIG.tempoFeedback;
+      setTimeout(avancar, tempoEspera);
+    }
+
+    /* ── Avançar / Finalizar ─────────────────────────────────────── */
+    function avancar() {
+      if (bateBolaTimer) {
+        clearTimeout(bateBolaTimer);
+        bateBolaTimer = null;
+      }
+      indiceAtual++;
+      if (indiceAtual < perguntasAtivas.length) {
+        exibirPergunta();
+      } else {
+        exibirResultado();
+      }
+    }
+
+    function exibirResultado() {
+      mostrarTela("final");
+
+      const total = perguntasJogaveis().length;
+      const pct = total ? Math.round((acertos / total) * 100) : 0;
+
+      el.scoreNumber.textContent = acertos;
+      el.scoreTotal.textContent = `/ ${total}`;
+
+      requestAnimationFrame(() => {
+        el.scoreBarFill.style.width = pct + "%";
+      });
+
+      if (pct === 100) {
+        el.finalMessage.textContent = "Hat-trick perfeito! Você domina o OPS 2.0! 🌟";
+      } else if (pct >= 70) {
+        el.finalMessage.textContent = "Grande goleada! Você manja dos processos operacionais! 👏";
+      } else if (pct >= 40) {
+        el.finalMessage.textContent = "Bom jogo! Dá pra melhorar na próxima rodada. 💪";
+      } else {
+        el.finalMessage.textContent = "Hora de revisar os playbooks do Pack Ops! 📚";
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
